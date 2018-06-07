@@ -1,11 +1,13 @@
 import express from 'express';
-// import bodyParser from 'body-parser';
+import config from './config/config';
 import videoRouter from './routes/video';
 
 
 const app = express();
 
-app.set('port', 3000);
+app.config = config;
+
+app.set('port', app.config.port);
 
 videoRouter(app);
 

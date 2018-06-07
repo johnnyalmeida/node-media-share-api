@@ -23,7 +23,10 @@ export default (app) => {
     })
     .post((req, res) => {
       // For dev purposes only
-      AWS.config.update({ accessKeyId: '...', secretAccessKey: '...' });
+      AWS.config.update({
+        accessKeyId: app.config.aws_key,
+        secretAccessKey: app.config.aws_secret,
+      });
 
       const { file } = req.files;
 
