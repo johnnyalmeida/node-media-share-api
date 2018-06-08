@@ -8,8 +8,8 @@
     "build": "babel -d build/ server/",
     "start": "node ./build/index.js",
     "start:dev": "nodemon --exec babel-node ./server/index.js",
-    "lint": "eslint '**/*js'",
-    "lint:fix": "eslint '**/*js' --fix"
+    "lint": "eslint 'server/**/*js'",
+    "lint:fix": "eslint 'server/**/*js' --fix"
   },
   "dependencies": {
     "aws-sdk": "^2.252.1",

@@ -35,22 +35,23 @@ export default (app) => {
         if (err) { throw err; }
         const base64data = Buffer.from(data, 'binary');
         const s3 = new AWS.S3();
-        const bucket = 'hlg.destemperados';
+        const bucket = '';
         const token = uuid();
         const key = `${token}.${path.extname(file.filename)}`;
-
 
         s3.client.putObject({
           Bucket: bucket,
           Key: key,
           Body: base64data,
           ACL: 'public-read',
-        }, (resp) => {
-          console.log(resp);
-          console.log('Successfully uploaded package.');
+        }, (error, result) => {
+          if (error) {
+            res.status(500);
+            res.json(error);
+          }
+          res.status(200);
+          res.json(result);
         });
       });
-      res.status(200);
-      res.json({ test: '' });
     });
 };

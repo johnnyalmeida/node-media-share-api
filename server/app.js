@@ -7,6 +7,8 @@ const app = express();
 
 app.config = config;
 
+console.log(process.env);
+
 app.set('port', app.config.port);
 
 videoRouter(app);
