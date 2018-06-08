@@ -1,57 +1,52 @@
-import ffmpeg from 'fluent-ffmpeg';
-import AWS from 'aws-sdk';
 import fs from 'fs';
-import uuid from 'uuid';
-import path from 'path';
+
+import VideoController from '../controllers/video';
 
 export default (app) => {
-  app.route('/video')
+  const videoController = new VideoController(app.config);
+
+  app.get('/', (req, res) => {
+    fs.readFile('./_files/index.html', (err, html) => res.end(html));
+  });
+
+  app.route('/video/:key')
     .get((req, res) => {
-      const command = ffmpeg('/www/node-video/sample_video.mp4');
-      // .audioCodec('libfaac')
-      // .videoCodec('libx264')
-      // .format('mp4');
-
-      command.clone()
-        .size('640x?')
-        .aspect('9:16')
-        .autopad()
-        .save('/www/node-video/converted.mp4');
-
-      res.status(200);
-      res.json({ test: '' });
-    })
-    .post((req, res) => {
-      // For dev purposes only
-      AWS.config.update({
-        accessKeyId: app.config.aws_key,
-        secretAccessKey: app.config.aws_secret,
-      });
-
-      const { file } = req.files;
-
-      // Read in the file, convert it to base64, store to S3
-      fs.readFile(file.path, (err, data) => {
-        if (err) { throw err; }
-        const base64data = Buffer.from(data, 'binary');
-        const s3 = new AWS.S3();
-        const bucket = '';
-        const token = uuid();
-        const key = `${token}.${path.extname(file.filename)}`;
-
-        s3.client.putObject({
-          Bucket: bucket,
-          Key: key,
-          Body: base64data,
-          ACL: 'public-read',
-        }, (error, result) => {
-          if (error) {
-            res.status(500);
-            res.json(error);
-          }
-          res.status(200);
-          res.json(result);
+      const { key } = req.params;
+      const movieFile = `/${app.config.aws_bucket}/${key}`;
+      fs.stat(movieFile, (err, stats) => {
+        if (err) {
+          return res.status(404).json(err);
+        }
+        // Setup the chunk headers variables
+        const { range } = req.headers;
+        const { size } = stats;
+        const start = Number((range || '').replace(/bytes=/, '').split('-')[0]);
+        const end = size - 1;
+        const chunkSize = (end - start) + 1;
+        // Set chunk headers
+        res.set({
+          'Content-Range': `bytes ${start}-${end}/${size}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunkSize,
+          'Content-Type': 'video/mp4',
         });
+
+        // Read the file and send chunks through stream.pipe()
+        const stream = fs.createReadStream(movieFile, { start, end });
+        stream.on('open', () => stream.pipe(res));
+        stream.on('error', streamErr => res.end(streamErr));
+
+        // Send a PARTIAL CONTENT status code
+        return res.status(206);
       });
+    });
+
+  app.route('/video')
+    .post((req, res) => {
+      videoController.uploadVideo(req)
+        .then((response) => {
+          res.status(response.statusCode);
+          res.json(response.data);
+        });
     });
 };

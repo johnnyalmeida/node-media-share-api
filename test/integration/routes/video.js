@@ -1,15 +1,4 @@
 describe('Route Video', () => {
-  describe('Route GET /video', () => {
-    it('should return status 200', (done) => {
-      request
-        .get('/video')
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          done(err);
-        });
-    });
-  });
-
   describe('Route POST /video', () => {
     it('should upload a file', (done) => {
       request
