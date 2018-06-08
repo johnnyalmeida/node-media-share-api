@@ -9,7 +9,9 @@
     "start": "node ./build/index.js",
     "start:dev": "nodemon --exec babel-node ./server/index.js",
     "lint": "eslint 'server/**/*js'",
-    "lint:fix": "eslint 'server/**/*js' --fix"
+    "lint:fix": "eslint 'server/**/*js' --fix",
+    "test-integration": "NODE_TEST_ENV=true mocha --opts test/integration/mocha.opts test/integration/**/*.js",
+    "test": "npm run lint && npm run test-integration"
   },
   "dependencies": {
     "aws-sdk": "^2.252.1",
@@ -26,11 +28,18 @@
     "uuid": "^3.2.1"
   },
   "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-http": "^4.0.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-plugin-import": "^2.11.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
-    "eslint-plugin-react": "^7.7.0"
+    "eslint-plugin-react": "^7.7.0",
+    "joi": "^13.2.0",
+    "joi-assert": "0.0.3",
+    "mocha": "^5.2.0",
+    "supertest": "^3.0.0",
+    "testdouble": "^3.8.0"
   },
   "author": "",
   "license": "ISC"
