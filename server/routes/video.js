@@ -13,6 +13,7 @@ export default (app) => {
     .get((req, res) => {
       const { key } = req.params;
       const movieFile = `/${app.config.aws_bucket}/${key}`;
+
       fs.stat(movieFile, (err, stats) => {
         if (err) {
           return res.status(404).json(err);
@@ -43,10 +44,6 @@ export default (app) => {
 
   app.route('/video')
     .post((req, res) => {
-      videoController.uploadVideo(req)
-        .then((response) => {
-          res.status(response.statusCode);
-          res.json(response.data);
-        });
+      videoController.uploadVideo(req, res);
     });
 };
