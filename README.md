@@ -1,6 +1,6 @@
 # node-video-processing
 
-Simple video processing API in Node developed to test 
+Simple API developed for testing purposes
 
 
 ## Config
