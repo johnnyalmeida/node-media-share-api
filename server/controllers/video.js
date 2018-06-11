@@ -43,7 +43,7 @@ class VideoController/*  */ {
   /**
    * Upload video.
    */
-  uploadVideo(req, res) {
+  uploadVideo(req) {
     return new Promise((resolve, reject) => {
       const form = new formidable.IncomingForm();
 
@@ -62,8 +62,7 @@ class VideoController/*  */ {
             Body: base64data,
           }, (errorS3, result) => {
             if (errorS3) {
-              res.status(500);
-              res.json(errorS3);
+              reject(errorS3);
             }
             this.processVideo(key, result)
               .then((response) => {
@@ -96,7 +95,7 @@ class VideoController/*  */ {
           const newPath = `./tmp/processed/${key}`;
 
           command.clone()
-            .size('640x?')
+            .size('414x?')
             .aspect('9:16')
             .autopad()
             .save(newPath)

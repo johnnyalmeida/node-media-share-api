@@ -60,9 +60,8 @@ export default (app) => {
             },
           );
           s3.getObject(params).createReadStream().pipe(res);
-
-          return res.status(206);
         }
+        return res.status(206);
       });
     });
 
@@ -120,8 +119,8 @@ export default (app) => {
     .post((req, res) => {
       videoController.uploadVideo(req)
         .then((response) => {
-          res.status(response.statusCode);
-          res.json(response.data);
+          res.status(200);
+          res.json(response);
         })
         .catch((err) => {
           res.status(500);
