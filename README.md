@@ -3,7 +3,7 @@
 Simple video processing API in Node developed to test 
 
 
-### Config
+## Config
 
 - Create a `.env` file in the root (copy from `.env.example`)
 
@@ -11,16 +11,16 @@ Simple video processing API in Node developed to test
 
 - For any new config variable in the `.env` file you should set it in the `server/config/config.js` file in order to get it in the `app.config`
 
-### Routes
+## Routes
 
-`GET /`
+### `GET /`
 
-Return a html page that loads a sample video in the stream.
+Returns a html page that loads a sample video in the stream.
 
 
-`GET /video/:key`
+### `GET /video/:key`
 
-Return a video stream
+Returns a video stream
 
 Param
 ```
@@ -33,11 +33,11 @@ Return
 ```
 
 
-`POST /video`
+### `POST /video`
 
 Upload and process a video file
 
-Send
+Body
 ```
   {
     file: "Video File"
