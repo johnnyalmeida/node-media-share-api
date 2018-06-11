@@ -21,9 +21,9 @@ const defaultResponse = (data, statusCode = HttpStatus.OK) => ({
  * @param {Obj} data - Response data
  * @param {*} statusCode - Status code, default 400
  */
-const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultResponse({
-  error: message,
-}, statusCode);
+// const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultResponse({
+//   error: message,
+// }, statusCode);
 
 /**
  * Manage movies endpoints
@@ -36,99 +36,104 @@ class VideoController/*  */ {
       accessKeyId: this.config.aws_key,
       secretAccessKey: this.config.aws_secret,
     });
+
+    this.s3 = new AWS.S3();
   }
 
   /**
    * Upload video.
    */
   uploadVideo(req, res) {
-    const form = new formidable.IncomingForm();
+    return new Promise((resolve, reject) => {
+      const form = new formidable.IncomingForm();
 
-    form.parse(req, (err, fields, files) => {
-      // `file` is the name of the <input> field of type `file`
-      // const oldPath = files.file.path;
-      // const fileSize = files.file.size;
-      // const fileExt = files.file.name.split('.').pop();
-      // const index = oldPath.lastIndexOf('/') + 1;
-      // const fileName = oldPath.substr(index);
-      // const newPath = path.join(process.env.PWD, '/uploads/', `${fileName}.${fileExt}`);
+      form.parse(req, (err, fields, files) => {
+        fs.readFile(files.file.path, (error, data) => {
+          if (error) { throw error; }
+          const base64data = Buffer.from(data, 'binary');
+          const s3 = new AWS.S3();
+          const bucket = this.config.aws_bucket;
+          const token = uuid();
+          const key = `${token}${path.extname(files.file.name)}`;
 
-      fs.readFile(files.file.path, (error, data) => {
-        if (error) { throw error; }
-        const base64data = Buffer.from(data, 'binary');
-        const s3 = new AWS.S3();
-        const bucket = this.config.aws_bucket;
-        const token = uuid();
-        const key = `${token}${path.extname(files.file.name)}`;
-
-        console.log(key);
-
-        s3.putObject({
-          Bucket: bucket,
-          Key: key,
-          Body: base64data,
-          ACL: 'public-read',
-        }, (errorS3, result) => {
-          if (errorS3) {
-            res.status(500);
-            res.json(errorS3);
-          }
-          // this.processVideo(key, result);
-          res.status(200);
-          res.json(result);
+          s3.putObject({
+            Bucket: bucket,
+            Key: key,
+            Body: base64data,
+          }, (errorS3, result) => {
+            if (errorS3) {
+              res.status(500);
+              res.json(errorS3);
+            }
+            this.processVideo(key, result)
+              .then((response) => {
+                resolve(defaultResponse(response));
+              })
+              .catch(promisseErr => reject(promisseErr));
+          });
         });
       });
     });
   }
 
   processVideo(key) {
-    const s3 = new AWS.S3();
-    const params = {
-      Bucket: this.config.aws_bucket,
-      Key: key,
-    };
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(`./tmp/${key}`);
 
-    const file = fs.createWriteStream(`./tmp/${key}`);
+      const params = {
+        Bucket: this.config.aws_bucket,
+        Key: key,
+      };
 
-    s3.getObject(params).createReadStream().pipe(file);
+      this.s3.getObject(params).createReadStream().pipe(file)
+        .on('finish', () => {
+          const filePath = `./tmp/${key}`;
+          const command = ffmpeg(filePath)
+            .audioCodec('aac')
+          // .videoCodec('libx264')
+            .format('mp4');
 
-    const filePath = `./tmp/${key}`;
+          const newPath = `./tmp/processed/${key}`;
 
-    const command = ffmpeg(filePath);
-    // .audioCodec('libfaac')
-    // .videoCodec('libx264')
-    // .format('mp4');
-
-    const newPath = `./tmp/processed/${key}`;
-
-    command.clone()
-      .size('640x?')
-      .aspect('9:16')
-      .autopad()
-      .save(newPath);
-
-    // this.moveTempToS3(newPath, key);
+          command.clone()
+            .size('640x?')
+            .aspect('9:16')
+            .autopad()
+            .save(newPath)
+            .on('end', () => {
+              this.moveTempToS3(newPath, key, resolve, reject)
+                .then((data) => {
+                  resolve(data);
+                })
+                .catch(error => reject(error));
+            });
+        });
+    });
   }
 
   moveTempToS3(filePath, fileName) {
-    // Read in the file, convert it to base64, store to S3
-    fs.readFile(filePath, (err, data) => {
-      if (err) { throw err; }
-      const base64data = Buffer.from(data, 'binary');
-      const s3 = new AWS.S3();
-      const bucket = this.config.aws_bucket;
-      const key = `processed/${fileName}`;
+    return new Promise((resolve, reject) => {
+      // Read in the file, convert it to base64, store to S3
+      fs.readFile(filePath, (err, data) => {
+        if (err) { throw err; }
+        const base64data = Buffer.from(data, 'binary');
+        const bucket = this.config.aws_bucket;
+        const key = `processed/${fileName}`;
 
-      s3.client.putObject({
-        Bucket: bucket,
-        Key: key,
-        Body: base64data,
-        ACL: 'public-read',
-      }, (error, result) => {
-        if (error) {
-          return errorResponse(error, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return defaultResponse({ s3: result, file: key });
+        this.s3.putObject({
+          Bucket: bucket,
+          Key: key,
+          Body: base64data,
+        }, (error, result) => {
+          if (error) {
+            reject(error);
+          }
+          const file = {
+            path: key,
+            s3: result,
+          };
+          resolve(file);
+        });
       });
     });
   }

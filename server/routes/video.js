@@ -44,6 +44,14 @@ export default (app) => {
 
   app.route('/video')
     .post((req, res) => {
-      videoController.uploadVideo(req, res);
+      videoController.uploadVideo(req)
+        .then((response) => {
+          res.status(response.statusCode);
+          res.json(response.data);
+        })
+        .catch((err) => {
+          res.status(500);
+          res.json(err);
+        });
     });
 };
