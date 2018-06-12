@@ -31,7 +31,7 @@ const defaultResponse = (data, statusCode = HttpStatus.OK) => ({
 class VideoController/*  */ {
   constructor(config) {
     this.config = config;
-    this.testKey = '340985ed-ee35-45b9-9e69-386046a07a72.mp4';
+    this.testKey = 'sample_vertical.mp4';
     // For dev purposes only
     AWS.config.update({
       accessKeyId: this.config.aws_key,
@@ -103,7 +103,7 @@ class VideoController/*  */ {
 
           ffmpeg(filePath)
             .audioCodec('aac')
-          // .videoCodec('libx264')
+            .videoCodec('libx264')
             .format('mp4')
             .size('750x1334')
             .aspect('9:16')
@@ -193,7 +193,7 @@ class VideoController/*  */ {
   processTestVideo() {
     return new Promise((resolve) => {
       const newPath = `./tmp/processed/${this.testKey}`;
-
+      console.log('testing');
       // ffmpeg(filePath)
       // .audioCodec('aac')
       // .videoCodec('libx264')
@@ -203,17 +203,18 @@ class VideoController/*  */ {
       // .autopad()
       // .videoBitrate(1500)
       // .fps(29.7)
-      const video = ffmpeg(`./tmp/${this.testKey}`)
+      const video = ffmpeg(`./_files/${this.testKey}`)
         // .loop()
         // .input('./_files/4all.png')
-        .input('./_files/homer.gif')
+        .input('https://media.giphy.com/media/LTsawtG3DdFfi/source.gif')
+        // .input('./_files/homer.gif/')
         .audioCodec('aac')
         .videoCodec('libx264')
         // .size('750x1334')
         .videoBitrate(1000)
         .inputOptions('-ignore_loop 0')
         .complexFilter([
-          '[0:v]crop=in_w-2*28:in_h-2*25[base];[base][1:v]overlay=400:H-h-500:shortest=1',
+          '[0:v]crop=in_w-2*28:in_h-2*25[base];[base][1:v]overlay=0:H-h-500:shortest=1',
         ]);
         // .complexFilter([
         //   '[0:v]scale=640:-1[bg];[bg][1:v]overlay=W-w-10:H-h-10',
@@ -225,6 +226,7 @@ class VideoController/*  */ {
         //     text: 'LOREM IPSUM',
         //   },
         // })
+      console.log('post code');
 
       video.save(newPath)
         .on('end', () => {
