@@ -31,6 +31,7 @@ const defaultResponse = (data, statusCode = HttpStatus.OK) => ({
 class VideoController/*  */ {
   constructor(config) {
     this.config = config;
+    this.testKey = '340985ed-ee35-45b9-9e69-386046a07a72.mp4';
     // For dev purposes only
     AWS.config.update({
       accessKeyId: this.config.aws_key,
@@ -43,7 +44,7 @@ class VideoController/*  */ {
   /**
    * Upload video.
    */
-  uploadVideo(req) {
+  uploadVideo(req, gif = false) {
     return new Promise((resolve, reject) => {
       const form = new formidable.IncomingForm();
 
@@ -61,14 +62,23 @@ class VideoController/*  */ {
             Key: key,
             Body: base64data,
           }, (errorS3, result) => {
+            console.log('uploaded');
             if (errorS3) {
               reject(errorS3);
             }
-            this.processVideo(key, result)
-              .then((response) => {
-                resolve(defaultResponse(response));
-              })
-              .catch(promisseErr => reject(promisseErr));
+            if (gif) {
+              this.processWithGif(key, result)
+                .then((response) => {
+                  resolve(defaultResponse(response));
+                })
+                .catch(promisseErr => reject(promisseErr));
+            } else {
+              this.processVideo(key, result)
+                .then((response) => {
+                  resolve(defaultResponse(response));
+                })
+                .catch(promisseErr => reject(promisseErr));
+            }
           });
         });
       });
@@ -86,20 +96,23 @@ class VideoController/*  */ {
 
       this.s3.getObject(params).createReadStream().pipe(file)
         .on('finish', () => {
+          console.log('start processing');
           const filePath = `./tmp/${key}`;
-          const command = ffmpeg(filePath)
-            .audioCodec('aac')
-          // .videoCodec('libx264')
-            .format('mp4');
 
           const newPath = `./tmp/processed/${key}`;
 
-          command.clone()
-            .size('414x?')
+          ffmpeg(filePath)
+            .audioCodec('aac')
+          // .videoCodec('libx264')
+            .format('mp4')
+            .size('750x1334')
             .aspect('9:16')
             .autopad()
             .save(newPath)
+            .videoBitrate(3500)
+            .fps(29.7)
             .on('end', () => {
+              console.log('processed');
               this.moveTempToS3(newPath, key, resolve, reject)
                 .then((data) => {
                   resolve(data);
@@ -124,6 +137,7 @@ class VideoController/*  */ {
           Key: key,
           Body: base64data,
         }, (error, result) => {
+          console.log('move');
           if (error) {
             reject(error);
           }
@@ -131,9 +145,92 @@ class VideoController/*  */ {
             path: key,
             s3: result,
           };
+          console.log(file);
           resolve(file);
         });
       });
+    });
+  }
+
+  processWithGif(key) {
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(`./tmp/${key}`);
+
+      const params = {
+        Bucket: this.config.aws_bucket,
+        Key: key,
+      };
+
+      this.s3.getObject(params).createReadStream().pipe(file)
+        .on('finish', () => {
+          console.log('start processing');
+          const filePath = `./tmp/${key}`;
+
+          const newPath = `./tmp/processed/${key}`;
+
+          ffmpeg(filePath)
+            .input('./_files/homer.gif')
+            .audioCodec('aac')
+            .videoCodec('libx264')
+            .videoBitrate(1000)
+            .inputOptions('-ignore_loop 0')
+            .complexFilter([
+              '[0:v]crop=in_w-2*28:in_h-2*25[base];[base][1:v]overlay=400:H-h-500:shortest=1',
+            ])
+            .save(newPath)
+            .on('end', () => {
+              console.log('processed');
+              this.moveTempToS3(newPath, key, resolve, reject)
+                .then((data) => {
+                  resolve(data);
+                })
+                .catch(error => reject(error));
+            });
+        });
+    });
+  }
+
+  processTestVideo() {
+    return new Promise((resolve) => {
+      const newPath = `./tmp/processed/${this.testKey}`;
+
+      // ffmpeg(filePath)
+      // .audioCodec('aac')
+      // .videoCodec('libx264')
+      // .format('mp4')
+      // .size('750x1334')
+      // .aspect('9:16')
+      // .autopad()
+      // .videoBitrate(1500)
+      // .fps(29.7)
+      const video = ffmpeg(`./tmp/${this.testKey}`)
+        // .loop()
+        // .input('./_files/4all.png')
+        .input('./_files/homer.gif')
+        .audioCodec('aac')
+        .videoCodec('libx264')
+        // .size('750x1334')
+        .videoBitrate(1000)
+        .inputOptions('-ignore_loop 0')
+        .complexFilter([
+          '[0:v]crop=in_w-2*28:in_h-2*25[base];[base][1:v]overlay=400:H-h-500:shortest=1',
+        ]);
+        // .complexFilter([
+        //   '[0:v]scale=640:-1[bg];[bg][1:v]overlay=W-w-10:H-h-10',
+        // ]);
+
+        // .videoFilters({
+        //   filter: 'drawtext',
+        //   options: {
+        //     text: 'LOREM IPSUM',
+        //   },
+        // })
+
+      video.save(newPath)
+        .on('end', () => {
+          console.log('processed');
+          resolve();
+        });
     });
   }
 }

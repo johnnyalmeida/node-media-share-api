@@ -127,4 +127,31 @@ export default (app) => {
           res.json(err);
         });
     });
+
+
+  app.route('/video/upload/gif')
+    .post((req, res) => {
+      videoController.uploadVideo(req, true)
+        .then((response) => {
+          res.status(200);
+          res.json(response);
+        })
+        .catch((err) => {
+          res.status(500);
+          res.json(err);
+        });
+    });
+
+  app.route('/video/process/test')
+    .get((req, res) => {
+      videoController.processTestVideo()
+        .then((response) => {
+          res.status(200);
+          res.json(response);
+        })
+        .catch((err) => {
+          res.status(500);
+          res.json(err);
+        });
+    });
 };
