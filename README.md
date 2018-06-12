@@ -51,3 +51,37 @@ Return
    s3: STRING, AWS S3 response text
  }
 ```
+
+
+### `GET /image/:key`
+
+Returns an image
+
+Param
+```
+  "key"  | STRING, the  file name
+```
+
+Return 
+```
+  Image
+```
+
+### `POST /image`
+
+Upload and process an image file
+
+Body
+```
+  {
+    file: "Image File"
+  }
+```
+
+Return
+```
+ {
+   path: STRING, processed file path
+   s3: STRING, AWS S3 response text
+ }
+```
