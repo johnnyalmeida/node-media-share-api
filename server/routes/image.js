@@ -14,4 +14,9 @@ export default (app) => {
           res.json(err);
         });
     });
+
+  app.route('/image/:key')
+    .get((req, res) => {
+      imageController.getImage(req, res);
+    });
 };

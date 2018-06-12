@@ -73,6 +73,22 @@ class ImageController {
       });
     });
   }
+
+  /**
+   * Get image
+   */
+  getImage(req, res) {
+    const { key } = req.params;
+
+    const params = {
+      Bucket: this.config.aws_bucket,
+      Key: `images/${key}`,
+    };
+
+    this.s3.getObject(params)
+      .createReadStream()
+      .pipe(res);
+  }
 }
 
 export default ImageController;
