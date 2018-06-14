@@ -20,12 +20,12 @@ export default (app) => {
 
       const params = {
         Bucket: app.config.aws_bucket,
-        Key: `videos/processed/${key}.mp4`,
+        Key: `videos/processed/${key}`,
       };
 
       const s3 = new AWS.S3();
 
-      s3.listObjectsV2({ Bucket: params.Bucket, MaxKeys: 1, Prefix: `videos/processed/${key}.mp4` }, (err, data) => {
+      s3.listObjectsV2({ Bucket: params.Bucket, MaxKeys: 1, Prefix: `videos/processed/${key}` }, (err, data) => {
         if (err) {
           return res.sendStatus(404);
         }
@@ -45,7 +45,7 @@ export default (app) => {
             'Last-Modified': data.Contents[0].LastModified,
             'Content-Type': 'video/mp4',
           });
-          s3.getObject({ Bucket: params.Bucket, Key: `videos/processed/${key}.mp4`, Range: range })
+          s3.getObject({ Bucket: params.Bucket, Key: `videos/processed/${key}`, Range: range })
             .createReadStream()
             .pipe(res);
         } else {

@@ -31,7 +31,7 @@ Return JSON
   }
 ```
 
-### `GET /video/:key`
+### `GET /video/stream/:key`
 
 Returns a video stream
 
