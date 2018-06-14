@@ -20,12 +20,12 @@ export default (app) => {
 
       const params = {
         Bucket: app.config.aws_bucket,
-        Key: `processed/${key}`,
+        Key: `videos/processed/${key}.mp4`,
       };
 
       const s3 = new AWS.S3();
 
-      s3.listObjectsV2({ Bucket: params.Bucket, MaxKeys: 1, Prefix: `processed/${key}` }, (err, data) => {
+      s3.listObjectsV2({ Bucket: params.Bucket, MaxKeys: 1, Prefix: `videos/processed/${key}.mp4` }, (err, data) => {
         if (err) {
           return res.sendStatus(404);
         }
@@ -45,7 +45,7 @@ export default (app) => {
             'Last-Modified': data.Contents[0].LastModified,
             'Content-Type': 'video/mp4',
           });
-          s3.getObject({ Bucket: params.Bucket, Key: `processed/${key}`, Range: range })
+          s3.getObject({ Bucket: params.Bucket, Key: `videos/processed/${key}.mp4`, Range: range })
             .createReadStream()
             .pipe(res);
         } else {
@@ -116,6 +116,17 @@ export default (app) => {
     });
 
   app.route('/video')
+    .get((req, res) => {
+      videoController.list()
+        .then((response) => {
+          res.status(200);
+          res.json(response);
+        })
+        .catch((err) => {
+          res.status(500);
+          res.json(err);
+        });
+    })
     .post((req, res) => {
       videoController.uploadVideo(req)
         .then((response) => {
@@ -129,7 +140,7 @@ export default (app) => {
     });
 
 
-  app.route('/video/upload/gif')
+  app.route('/video/filter/gif')
     .post((req, res) => {
       videoController.uploadVideo(req, true)
         .then((response) => {
@@ -142,7 +153,7 @@ export default (app) => {
         });
     });
 
-  app.route('/video/process/test')
+  app.route('/video/filter/manual-test')
     .get((req, res) => {
       videoController.processTestVideo()
         .then((response) => {

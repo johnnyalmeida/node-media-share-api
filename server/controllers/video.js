@@ -42,9 +42,32 @@ class VideoController/*  */ {
   }
 
   /**
+   * List videos.
+   */
+  list() {
+    return new Promise((resolve, reject) => {
+      const params = {
+        Bucket: this.config.aws_bucket,
+        Prefix: 'videos/processed',
+      };
+      this.s3.listObjects(params, (err, objects) => {
+        if (err) {
+          reject(err);
+        } else {
+          const result = objects.Contents.map((value) => {
+            const text = value.Key.replace('.mp4', '');
+            return text.replace('videos/processed/', '');
+          });
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  /**
    * Upload video.
    */
-  uploadVideo(req, gif = false) {
+  uploadVideo(req, gif = true) {
     return new Promise((resolve, reject) => {
       const form = new formidable.IncomingForm();
 
@@ -55,7 +78,8 @@ class VideoController/*  */ {
           const s3 = new AWS.S3();
           const bucket = this.config.aws_bucket;
           const token = uuid();
-          const key = `${token}${path.extname(files.file.name)}`;
+          const fileName = `${token}${path.extname(files.file.name)}`;
+          const key = `videos/${fileName}`;
 
           s3.putObject({
             Bucket: bucket,
@@ -67,13 +91,13 @@ class VideoController/*  */ {
               reject(errorS3);
             }
             if (gif) {
-              this.processWithGif(key, result)
+              this.processWithGif(fileName, result)
                 .then((response) => {
                   resolve(defaultResponse(response));
                 })
                 .catch(promisseErr => reject(promisseErr));
             } else {
-              this.processVideo(key, result)
+              this.processVideo(fileName, result)
                 .then((response) => {
                   resolve(defaultResponse(response));
                 })
@@ -87,19 +111,19 @@ class VideoController/*  */ {
 
   processVideo(key) {
     return new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(`./tmp/${key}`);
+      const file = fs.createWriteStream(`./tmp/videos/${key}`);
 
       const params = {
         Bucket: this.config.aws_bucket,
-        Key: key,
+        Key: `videos/${key}`,
       };
 
       this.s3.getObject(params).createReadStream().pipe(file)
         .on('finish', () => {
           console.log('start processing');
-          const filePath = `./tmp/${key}`;
+          const filePath = `./tmp/videos/${key}`;
 
-          const newPath = `./tmp/processed/${key}`;
+          const newPath = `./tmp/videos/processed/${key}`;
 
           ffmpeg(filePath)
             .audioCodec('aac')
@@ -130,7 +154,7 @@ class VideoController/*  */ {
         if (err) { throw err; }
         const base64data = Buffer.from(data, 'binary');
         const bucket = this.config.aws_bucket;
-        const key = `processed/${fileName}`;
+        const key = `videos/processed/${fileName}`;
 
         this.s3.putObject({
           Bucket: bucket,
@@ -154,19 +178,19 @@ class VideoController/*  */ {
 
   processWithGif(key) {
     return new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(`./tmp/${key}`);
+      const file = fs.createWriteStream(`./tmp/videos/${key}`);
 
       const params = {
         Bucket: this.config.aws_bucket,
-        Key: key,
+        Key: `videos/${key}`,
       };
 
       this.s3.getObject(params).createReadStream().pipe(file)
         .on('finish', () => {
           console.log('start processing');
-          const filePath = `./tmp/${key}`;
+          const filePath = `./tmp/videos/${key}`;
 
-          const newPath = `./tmp/processed/${key}`;
+          const newPath = `./tmp/videos/processed/${key}`;
 
           ffmpeg(filePath)
             .input('./_files/homer.gif')

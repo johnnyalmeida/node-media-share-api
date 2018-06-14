@@ -41,6 +41,29 @@ class ImageController {
   }
 
   /**
+   * List images.
+   */
+  list() {
+    return new Promise((resolve, reject) => {
+      const params = {
+        Bucket: this.config.aws_bucket,
+        Prefix: 'images/processed',
+      };
+      this.s3.listObjects(params, (err, objects) => {
+        if (err) {
+          reject(err);
+        } else {
+          const result = objects.Contents.map((value) => {
+            const text = value.Key.replace('.jpg', '');
+            return text.replace('images/processed/', '');
+          });
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  /**
    * Upload image.
    */
   uploadImage(req) {
@@ -64,10 +87,6 @@ class ImageController {
             if (errorS3) {
               reject(errorS3);
             }
-            // const response = {
-            //   path: key,
-            //   s3: result,
-            // };
             this.processImage(key)
               .then((response) => {
                 resolve(defaultResponse(response));
