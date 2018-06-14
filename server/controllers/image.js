@@ -166,7 +166,7 @@ class ImageController {
 
     const params = {
       Bucket: this.config.aws_bucket,
-      Key: `images/processed/${key}`,
+      Key: `images/processed/${key}.jpg`,
     };
 
     this.s3.getObject(params)
