@@ -18,6 +18,19 @@ Simple API developed for testing purposes
 Returns a html page that loads a sample video in the stream.
 
 
+
+### `GET /video/`
+
+Returns a list of videos
+
+
+Return JSON
+```
+  {
+    'video-key' // String
+  }
+```
+
 ### `GET /video/:key`
 
 Returns a video stream
@@ -52,6 +65,18 @@ Return
  }
 ```
 
+
+### `GET /image/`
+
+Returns a list of images
+
+
+Return JSON
+```
+  {
+    'image-key' // String
+  }
+```
 
 ### `GET /image/:key`
 
