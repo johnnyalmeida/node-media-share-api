@@ -8,6 +8,7 @@ export default {
   aws_secret: process.env.AWS_SECRET,
   aws_bucket: process.env.AWS_BUCKET,
   aws_s3_domain: process.env.AWS_S3_DOMAIN,
-  processing_api_url: process.env.PROCESSING_API_URL,
+  video_processing_api_url: process.env.VIDEO_PROCESSING_API_URL,
+  image_processing_api_url: process.env.IMAGE_PROCESSING_API_URL,
   port: process.env.PORT,
 };

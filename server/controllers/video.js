@@ -86,7 +86,7 @@ class VideoController/*  */ {
         }
         console.log('uploaded');
         request.post(
-          `${this.config.processing_api_url}/video`,
+          `${this.config.video_processing_api_url}/video`,
           { json: { key: fileName } },
           (errRequest, response) => {
             if (!errRequest && response.statusCode === 200) {

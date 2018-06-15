@@ -2,9 +2,8 @@ import HttpStatus from 'http-status';
 import AWS from 'aws-sdk';
 import fs from 'fs';
 import uuid from 'uuid';
-import path from 'path';
-import formidable from 'formidable';
 import Jimp from 'jimp';
+import request from 'request';
 
 /**
  * Default success response callback
@@ -21,9 +20,9 @@ const defaultResponse = (data, statusCode = HttpStatus.OK) => ({
  * @param {Obj} data - Response data
  * @param {*} statusCode - Status code, default 400
  */
-// const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultResponse({
-//   error: message,
-// }, statusCode);
+const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultResponse({
+  error: message,
+}, statusCode);
 
 /**
  * Manage movies endpoints
@@ -69,32 +68,34 @@ class ImageController {
    */
   uploadImage(req) {
     return new Promise((resolve, reject) => {
-      const form = new formidable.IncomingForm();
+      console.log('uploading image');
+      const base64data = Buffer.from(req.body.file, 'base64');
+      const s3 = new AWS.S3();
+      const bucket = this.config.aws_bucket;
+      const token = uuid();
+      const fileName = `${token}.jpg`;
 
-      form.parse(req, (err, fields, files) => {
-        fs.readFile(files.file.path, (error, data) => {
-          if (error) { throw error; }
-          const base64data = Buffer.from(data, 'binary');
-          const s3 = new AWS.S3();
-          const bucket = this.config.aws_bucket;
-          const token = uuid();
-          const key = `${token}${path.extname(files.file.name)}`;
-
-          s3.putObject({
-            Bucket: bucket,
-            Key: `images/${key}`,
-            Body: base64data,
-          }, (errorS3) => {
-            if (errorS3) {
-              reject(errorS3);
+      s3.putObject({
+        Bucket: bucket,
+        Key: `images/${fileName}`,
+        Body: base64data,
+      }, (errorS3) => {
+        if (errorS3) {
+          reject(errorS3);
+        }
+        console.log('post to process');
+        request.post(
+          `${this.config.image_processing_api_url}/image`,
+          { json: { key: fileName } },
+          (errRequest, response) => {
+            if (!errRequest && response.statusCode === 200) {
+              resolve(defaultResponse(fileName));
+            } else {
+              console.log(errRequest);
+              reject(errorResponse(errRequest));
             }
-            this.processImage(key)
-              .then((response) => {
-                resolve(defaultResponse(response));
-              })
-              .catch(processError => reject(processError));
-          });
-        });
+          },
+        );
       });
     });
   }
@@ -107,9 +108,11 @@ class ImageController {
         Bucket: this.config.aws_bucket,
         Key: `images/${key}`,
       };
+      console.log('start process');
 
       this.s3.getObject(params).createReadStream().pipe(file)
         .on('finish', () => {
+          console.log('process image');
           const filePath = `./tmp/images/${key}`;
           // console.log(filePath);
           Jimp.read(filePath).then((image) => {
@@ -126,36 +129,6 @@ class ImageController {
             reject(err);
           });
         });
-    });
-  }
-
-  /**
-   * Move processed image to S3
-   */
-  moveImageToS3(fileName, filePath) {
-    return new Promise((resolve, reject) => {
-      // Read in the file, convert it to base64, store to S3
-      fs.readFile(filePath, (err, data) => {
-        if (err) { throw err; }
-        const base64data = Buffer.from(data, 'binary');
-        const bucket = this.config.aws_bucket;
-        const key = `images/processed/${fileName}`;
-
-        this.s3.putObject({
-          Bucket: bucket,
-          Key: key,
-          Body: base64data,
-        }, (error, result) => {
-          if (error) {
-            reject(error);
-          }
-          const file = {
-            path: key,
-            s3: result,
-          };
-          resolve(file);
-        });
-      });
     });
   }
 

@@ -9,9 +9,9 @@ export default (app) => {
           res.status(200);
           res.json(response);
         })
-        .catch((err) => {
-          res.status(500);
-          res.json(err);
+        .catch((response) => {
+          res.status(response.statusCode);
+          res.json(response.data);
         });
     })
     .post((req, res) => {
@@ -20,9 +20,9 @@ export default (app) => {
           res.status(200);
           res.json(response);
         })
-        .catch((err) => {
-          res.status(500);
-          res.json(err);
+        .catch((response) => {
+          res.status(response.statusCode);
+          res.json(response.data);
         });
     });
 
