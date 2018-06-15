@@ -137,7 +137,9 @@ class ImageController {
    */
   getImage(req, res) {
     const { key } = req.params;
+
     console.log(key);
+
     const params = {
       Bucket: this.config.aws_bucket,
       Key: `images/processed/${key}`,
@@ -145,7 +147,10 @@ class ImageController {
 
     this.s3.getObject(params)
       .createReadStream()
-      .pipe(res);
+      .pipe(res)
+      .on('finish', () => {
+        console.log('finished serving image');
+      });
   }
 }
 
