@@ -22,7 +22,7 @@ export default (app) => {
         Bucket: app.config.aws_bucket,
         Key: `videos/processed/${key}`,
       };
-
+      console.log(key);
       const s3 = new AWS.S3();
 
       s3.listObjectsV2({ Bucket: params.Bucket, MaxKeys: 1, Prefix: `videos/processed/${key}` }, (err, data) => {
@@ -30,24 +30,28 @@ export default (app) => {
           return res.sendStatus(404);
         }
         if (req != null && req.headers.range != null) {
-          const { range } = req.headers;
-          const bytes = range.replace(/bytes=/, '').split('-');
-          const start = parseInt(bytes[0], 10);
+          try {
+            const { range } = req.headers;
+            const bytes = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(bytes[0], 10);
 
-          const total = data.Contents[0].Size;
-          const end = bytes[1] ? parseInt(bytes[1], 10) : total - 1;
-          const chunksize = (end - start) + 1;
+            const total = data.Contents[0].Size;
+            const end = bytes[1] ? parseInt(bytes[1], 10) : total - 1;
+            const chunksize = (end - start) + 1;
 
-          res.writeHead(206, {
-            'Content-Range': `bytes ${start}-${end}/${total}`,
-            'Accept-Ranges': 'bytes',
-            'Content-Length': chunksize,
-            'Last-Modified': data.Contents[0].LastModified,
-            'Content-Type': 'video/mp4',
-          });
-          s3.getObject({ Bucket: params.Bucket, Key: `videos/processed/${key}`, Range: range })
-            .createReadStream()
-            .pipe(res);
+            res.writeHead(206, {
+              'Content-Range': `bytes ${start}-${end}/${total}`,
+              'Accept-Ranges': 'bytes',
+              'Content-Length': chunksize,
+              'Last-Modified': data.Contents[0].LastModified,
+              'Content-Type': 'video/mp4',
+            });
+            s3.getObject({ Bucket: params.Bucket, Key: `videos/processed/${key}`, Range: range })
+              .createReadStream()
+              .pipe(res);
+          } catch (e) {
+            console.log(e);
+          }
         } else {
           const cache = 3600;
           res.writeHead(
@@ -134,8 +138,8 @@ export default (app) => {
           res.json(response);
         })
         .catch((err) => {
-          res.status(500);
-          res.json(err);
+          res.status(err.statusCode);
+          res.json(err.data);
         });
     });
 

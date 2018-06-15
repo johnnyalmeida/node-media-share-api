@@ -45,6 +45,7 @@ class ImageController {
    */
   list() {
     return new Promise((resolve, reject) => {
+      console.log('listing images');
       const params = {
         Bucket: this.config.aws_bucket,
         Prefix: 'images/processed',

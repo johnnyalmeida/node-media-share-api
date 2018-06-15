@@ -5,6 +5,7 @@ import fs from 'fs';
 import uuid from 'uuid';
 import path from 'path';
 import formidable from 'formidable';
+import request from 'request';
 
 /**
  * Default success response callback
@@ -21,9 +22,9 @@ const defaultResponse = (data, statusCode = HttpStatus.OK) => ({
  * @param {Obj} data - Response data
  * @param {*} statusCode - Status code, default 400
  */
-// const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultResponse({
-//   error: message,
-// }, statusCode);
+const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultResponse({
+  error: message,
+}, statusCode);
 
 /**
  * Manage movies endpoints
@@ -69,42 +70,51 @@ class VideoController/*  */ {
    */
   uploadVideo(req, gif = true) {
     return new Promise((resolve, reject) => {
-      const form = new formidable.IncomingForm();
+      // const form = new formidable.IncomingForm();
+      console.log('uploading');
 
-      form.parse(req, (err, fields, files) => {
-        fs.readFile(files.file.path, (error, data) => {
-          if (error) { throw error; }
-          const base64data = Buffer.from(data, 'binary');
-          const s3 = new AWS.S3();
-          const bucket = this.config.aws_bucket;
-          const token = uuid();
-          const fileName = `${token}${path.extname(files.file.name)}`;
-          const key = `videos/${fileName}`;
+      const base64data = Buffer.from(req.body.file, 'base64');
+      const s3 = new AWS.S3();
+      const bucket = this.config.aws_bucket;
+      const token = uuid();
+      const fileName = `${token}.mp4`;
+      const key = `videos/${fileName}`;
 
-          s3.putObject({
-            Bucket: bucket,
-            Key: key,
-            Body: base64data,
-          }, (errorS3, result) => {
-            console.log('uploaded');
-            if (errorS3) {
-              reject(errorS3);
-            }
-            if (gif) {
-              this.processWithGif(fileName, result)
-                .then((response) => {
-                  resolve(defaultResponse(response));
-                })
-                .catch(promisseErr => reject(promisseErr));
+      s3.putObject({
+        Bucket: bucket,
+        Key: key,
+        Body: base64data,
+        // ContentType: 'video/mp4'
+      }, (errorS3, result) => {
+        if (errorS3) {
+          reject(errorS3);
+        }
+        console.log('uploaded');
+        request.post(
+          `${this.config.processing_api_url}/video`,
+          { json: { key: fileName } },
+          (errRequest, response) => {
+            if (!errRequest && response.statusCode === 200) {
+              resolve(defaultResponse(fileName));
             } else {
-              this.processVideo(fileName, result)
-                .then((response) => {
-                  resolve(defaultResponse(response));
-                })
-                .catch(promisseErr => reject(promisseErr));
+              reject(errorResponse(errRequest));
             }
-          });
-        });
+          },
+        );
+
+        // if (gif) {
+        //   this.processWithGif(fileName, result)
+        //     .then((response) => {
+        //       resolve(defaultResponse(response));
+        //     })
+        //     .catch(promisseErr => reject(promisseErr));
+        // } else {
+        //   this.processVideo(fileName, result)
+        //     .then((response) => {
+        //       resolve(defaultResponse(response));
+        //     })
+        //     .catch(promisseErr => reject(promisseErr));
+        // }
       });
     });
   }
