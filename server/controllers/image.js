@@ -137,10 +137,10 @@ class ImageController {
    */
   getImage(req, res) {
     const { key } = req.params;
-
+    console.log(key);
     const params = {
       Bucket: this.config.aws_bucket,
-      Key: `images/processed/${key}.jpg`,
+      Key: `images/processed/${key}`,
     };
 
     this.s3.getObject(params)
