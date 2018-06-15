@@ -3,8 +3,6 @@ import AWS from 'aws-sdk';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import uuid from 'uuid';
-import path from 'path';
-import formidable from 'formidable';
 import request from 'request';
 
 /**
@@ -68,11 +66,9 @@ class VideoController/*  */ {
   /**
    * Upload video.
    */
-  uploadVideo(req, gif = true) {
+  uploadVideo(req) {
     return new Promise((resolve, reject) => {
-      // const form = new formidable.IncomingForm();
       console.log('uploading');
-
       const base64data = Buffer.from(req.body.file, 'base64');
       const s3 = new AWS.S3();
       const bucket = this.config.aws_bucket;
@@ -84,8 +80,7 @@ class VideoController/*  */ {
         Bucket: bucket,
         Key: key,
         Body: base64data,
-        // ContentType: 'video/mp4'
-      }, (errorS3, result) => {
+      }, (errorS3) => {
         if (errorS3) {
           reject(errorS3);
         }
@@ -101,20 +96,6 @@ class VideoController/*  */ {
             }
           },
         );
-
-        // if (gif) {
-        //   this.processWithGif(fileName, result)
-        //     .then((response) => {
-        //       resolve(defaultResponse(response));
-        //     })
-        //     .catch(promisseErr => reject(promisseErr));
-        // } else {
-        //   this.processVideo(fileName, result)
-        //     .then((response) => {
-        //       resolve(defaultResponse(response));
-        //     })
-        //     .catch(promisseErr => reject(promisseErr));
-        // }
       });
     });
   }
