@@ -19,15 +19,16 @@ Returns a html page that loads a sample video in the stream.
 
 ### `GET /feed/`
 
-Returns the feed
+Return the main feed
 
-
-Return JSON
+Return array of objects
 ```
+[
   {
     'file key' // String
     'file type' // String { 'image' | 'video' }
   }
+]
 ```
 
 ### `GET /video/`

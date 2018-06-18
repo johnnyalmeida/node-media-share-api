@@ -42,10 +42,16 @@ class ImageController {
   async get() {
     try {
       console.log('loading feed');
+      const feed = [];
       const images = await this.getImages();
       const videos = await this.getVideos();
 
-      const feed = images.concat(videos);
+      const mixed = images.concat(videos);
+      while (Object.keys(mixed).length > 3) {
+        const aux = mixed.splice(0, 3);
+        feed.push(aux);
+      }
+      feed.push(mixed);
 
       console.log('feed loaded');
       return shuffle(feed);
