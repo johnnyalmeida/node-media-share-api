@@ -17,7 +17,18 @@ Simple API developed for testing purposes
 
 Returns a html page that loads a sample video in the stream.
 
+### `GET /feed/`
 
+Returns the feed
+
+
+Return JSON
+```
+  {
+    'file key' // String
+    'file type' // String { 'image' | 'video' }
+  }
+```
 
 ### `GET /video/`
 
@@ -78,7 +89,21 @@ Return JSON
   }
 ```
 
-### `GET /image/:key`
+### `GET /image/thumb/:key`
+
+Returns an image thumbnail
+
+Param
+```
+  "key"  | STRING, the  file name
+```
+
+Return 
+```
+  Image
+```
+
+### `GET /image/original/:key`
 
 Returns an image
 

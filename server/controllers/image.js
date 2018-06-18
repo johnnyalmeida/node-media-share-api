@@ -1,8 +1,6 @@
 import HttpStatus from 'http-status';
 import AWS from 'aws-sdk';
-import fs from 'fs';
 import uuid from 'uuid';
-import Jimp from 'jimp';
 import request from 'request';
 
 /**
@@ -64,6 +62,30 @@ class ImageController {
   }
 
   /**
+   * List thumbs.
+   */
+  listThumbs() {
+    return new Promise((resolve, reject) => {
+      console.log('listing thumbs');
+      const params = {
+        Bucket: this.config.aws_bucket,
+        Prefix: 'images/thumbs',
+      };
+      this.s3.listObjects(params, (err, objects) => {
+        if (err) {
+          reject(err);
+        } else {
+          const result = objects.Contents.map((value) => {
+            const text = value.Key.replace('.jpg', '');
+            return text.replace('images/thumbs/', '');
+          });
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  /**
    * Upload image.
    */
   uploadImage(req) {
@@ -83,12 +105,12 @@ class ImageController {
         if (errorS3) {
           reject(errorS3);
         }
-        console.log('post to process');
         request.post(
           `${this.config.image_processing_api_url}/image`,
           { json: { key: fileName } },
           (errRequest, response) => {
             if (!errRequest && response.statusCode === 200) {
+              console.log('post to process');
               resolve(defaultResponse(fileName));
             } else {
               console.log(errRequest);
@@ -97,38 +119,6 @@ class ImageController {
           },
         );
       });
-    });
-  }
-
-  processImage(key) {
-    return new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(`./tmp/images/${key}`);
-
-      const params = {
-        Bucket: this.config.aws_bucket,
-        Key: `images/${key}`,
-      };
-      console.log('start process');
-
-      this.s3.getObject(params).createReadStream().pipe(file)
-        .on('finish', () => {
-          console.log('process image');
-          const filePath = `./tmp/images/${key}`;
-          // console.log(filePath);
-          Jimp.read(filePath).then((image) => {
-            image
-              .exifRotate()
-              .scaleToFit(1080, 1920)
-              .quality(75)
-              .write(`./tmp/images/processed/${key}`, () => {
-                this.moveImageToS3(key, filePath)
-                  .then(data => resolve(data))
-                  .catch(err => reject(err));
-              });
-          }).catch((err) => {
-            reject(err);
-          });
-        });
     });
   }
 
@@ -148,9 +138,40 @@ class ImageController {
     this.s3.getObject(params)
       .createReadStream()
       .pipe(res)
+      .on('error', () => {
+        errorResponse('Image not found', HttpStatus.NOT_FOUND);
+      })
       .on('finish', () => {
         console.log('finished serving image');
       });
+  }
+
+  /**
+   * Get image
+   */
+  getThumb(req, res) {
+    const { key } = req.params;
+
+    console.log(key);
+
+    const params = {
+      Bucket: this.config.aws_bucket,
+      Key: `images/thumbs/${key}`,
+    };
+
+    try {
+      this.s3.getObject(params)
+        .createReadStream()
+        .pipe(res)
+        .on('error', (err) => {
+          errorResponse(err, HttpStatus.BAD_REQUEST);
+        })
+        .on('finish', () => {
+          console.log('finished serving image');
+        });
+    } catch (e) {
+      errorResponse(e, HttpStatus.BAD_REQUEST);
+    }
   }
 }
 
