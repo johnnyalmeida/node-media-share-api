@@ -30,8 +30,8 @@ class ImageController {
     this.config = config;
     // For dev purposes only
     AWS.config.update({
-      accessKeyId: this.config.aws_key,
-      secretAccessKey: this.config.aws_secret,
+      accessKeyId: this.config.aws.key,
+      secretAccessKey: this.config.aws.secret,
     });
 
     this.s3 = new AWS.S3();
@@ -44,7 +44,7 @@ class ImageController {
     return new Promise((resolve, reject) => {
       console.log('listing images');
       const params = {
-        Bucket: this.config.aws_bucket,
+        Bucket: this.config.aws.bucket,
         Prefix: 'images/processed',
       };
       this.s3.listObjects(params, (err, objects) => {
@@ -68,7 +68,7 @@ class ImageController {
     return new Promise((resolve, reject) => {
       console.log('listing thumbs');
       const params = {
-        Bucket: this.config.aws_bucket,
+        Bucket: this.config.aws.bucket,
         Prefix: 'images/thumbs',
       };
       this.s3.listObjects(params, (err, objects) => {
@@ -93,7 +93,7 @@ class ImageController {
       console.log('uploading image');
       const base64data = Buffer.from(req.body.file, 'base64');
       const s3 = new AWS.S3();
-      const bucket = this.config.aws_bucket;
+      const { bucket } = this.config.aws;
       const token = uuid();
       const fileName = `${token}.jpg`;
 
@@ -131,7 +131,7 @@ class ImageController {
     console.log(key);
 
     const params = {
-      Bucket: this.config.aws_bucket,
+      Bucket: this.config.aws.bucket,
       Key: `images/processed/${key}`,
     };
 
@@ -155,7 +155,7 @@ class ImageController {
     console.log(key);
 
     const params = {
-      Bucket: this.config.aws_bucket,
+      Bucket: this.config.aws.bucket,
       Key: `images/thumbs/${key}`,
     };
 

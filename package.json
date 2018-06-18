@@ -25,8 +25,11 @@
     "fs": "0.0.1-security",
     "http-status": "^1.1.0",
     "jimp": "^0.2.28",
+    "knex": "^0.14.6",
+    "moment-timezone": "^0.5.20",
     "request": "^2.87.0",
     "shuffle-array": "^1.0.1",
+    "joi": "^13.4.0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {
@@ -37,7 +40,6 @@
     "eslint-plugin-import": "^2.11.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.7.0",
-    "joi": "^13.2.0",
     "joi-assert": "0.0.3",
     "mocha": "^5.2.0",
     "streamtest": "^1.2.3",

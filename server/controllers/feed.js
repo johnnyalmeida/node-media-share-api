@@ -29,8 +29,8 @@ class ImageController {
     this.config = config;
     // For dev purposes only
     AWS.config.update({
-      accessKeyId: this.config.aws_key,
-      secretAccessKey: this.config.aws_secret,
+      accessKeyId: this.config.aws.key,
+      secretAccessKey: this.config.aws.secret,
     });
 
     this.s3 = new AWS.S3();
@@ -66,7 +66,7 @@ class ImageController {
   getImages() {
     return new Promise((resolve, reject) => {
       const params = {
-        Bucket: this.config.aws_bucket,
+        Bucket: this.config.aws.bucket,
         Prefix: 'images/thumbs',
       };
       this.s3.listObjects(params, (err, objects) => {
@@ -92,7 +92,7 @@ class ImageController {
   getVideos() {
     return new Promise((resolve, reject) => {
       const params = {
-        Bucket: this.config.aws_bucket,
+        Bucket: this.config.aws.bucket,
         Prefix: 'videos/thumbs/',
       };
       this.s3.listObjects(params, (err, objects) => {
