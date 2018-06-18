@@ -1,4 +1,4 @@
-# node-video-processing
+# node-media-share-api
 
 Simple API developed for testing purposes
 
