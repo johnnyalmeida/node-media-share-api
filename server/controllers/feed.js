@@ -1,7 +1,6 @@
 import HttpStatus from 'http-status';
 import AWS from 'aws-sdk';
-import uuid from 'uuid';
-import request from 'request';
+import shuffle from 'shuffle-array';
 
 /**
  * Default success response callback
@@ -40,9 +39,21 @@ class ImageController {
   /**
    * List thumbs.
    */
-  get() {
+  async get() {
+    try {
+      const images = await this.getImages();
+      const videos = await this.getVideos();
+
+      const feed = images.concat(videos);
+
+      return shuffle(feed);
+    } catch (e) {
+      return errorResponse(e);
+    }
+  }
+
+  getImages() {
     return new Promise((resolve, reject) => {
-      console.log('listing thumbs');
       const params = {
         Bucket: this.config.aws_bucket,
         Prefix: 'images/thumbs',
@@ -56,6 +67,29 @@ class ImageController {
             return {
               key: text.replace('images/thumbs/', ''),
               type: 'image',
+            };
+          });
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  getVideos() {
+    return new Promise((resolve, reject) => {
+      const params = {
+        Bucket: this.config.aws_bucket,
+        Prefix: 'videos/processed/',
+      };
+      this.s3.listObjects(params, (err, objects) => {
+        if (err) {
+          reject(err);
+        } else {
+          const result = objects.Contents.map((value) => {
+            const text = value.Key.replace('.mp4', '');
+            return {
+              key: text.replace('videos/processed/', ''),
+              type: 'video',
             };
           });
           resolve(result);
