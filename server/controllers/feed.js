@@ -37,21 +37,26 @@ class ImageController {
   }
 
   /**
-   * List thumbs.
+   * List feed items.
    */
   async get() {
     try {
+      console.log('loading feed');
       const images = await this.getImages();
       const videos = await this.getVideos();
 
       const feed = images.concat(videos);
 
+      console.log('feed loaded');
       return shuffle(feed);
     } catch (e) {
       return errorResponse(e);
     }
   }
 
+  /**
+   * Get list of image thumbs.
+   */
   getImages() {
     return new Promise((resolve, reject) => {
       const params = {
@@ -75,20 +80,23 @@ class ImageController {
     });
   }
 
+  /**
+   * Get list of video.
+   */
   getVideos() {
     return new Promise((resolve, reject) => {
       const params = {
         Bucket: this.config.aws_bucket,
-        Prefix: 'videos/processed/',
+        Prefix: 'videos/thumbs/',
       };
       this.s3.listObjects(params, (err, objects) => {
         if (err) {
           reject(err);
         } else {
           const result = objects.Contents.map((value) => {
-            const text = value.Key.replace('.mp4', '');
+            const text = value.Key.replace('.jpg', '');
             return {
-              key: text.replace('videos/processed/', ''),
+              key: text.replace('videos/thumbs/', ''),
               type: 'video',
             };
           });

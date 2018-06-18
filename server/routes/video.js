@@ -9,6 +9,11 @@ export default (app) => {
     fs.readFile('./_files/index.html', (err, html) => res.end(html));
   });
 
+  app.route('/video/thumb/:key')
+    .get((req, res) => {
+      videoController.getThumb(req, res);
+    });
+
   app.route('/video/stream/:key')
     .get((req, res) => {
       const { key } = req.params;
