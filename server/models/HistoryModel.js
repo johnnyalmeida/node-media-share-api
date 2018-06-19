@@ -19,9 +19,10 @@ class historyModel {
   }
 
   static post(data) {
-    return knex
-      .from('history')
-      .insert(data);
+    return knex('history')
+      .insert(data)
+      .returning('id')
+      .toString();
   }
 
   static put(historyId, data) {

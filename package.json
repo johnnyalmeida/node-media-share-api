@@ -25,11 +25,12 @@
     "fs": "0.0.1-security",
     "http-status": "^1.1.0",
     "jimp": "^0.2.28",
+    "joi": "^13.4.0",
     "knex": "^0.14.6",
     "moment-timezone": "^0.5.20",
+    "mysql2": "^1.5.3",
     "request": "^2.87.0",
     "shuffle-array": "^1.0.1",
-    "joi": "^13.4.0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {

@@ -29,6 +29,12 @@ const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultR
 class HistoryController/*  */ {
   constructor(config) {
     this.config = config;
+
+    this.processingApi = {
+      video: this.config.video_processing_api_url,
+      image: this.config.image_processing_api_url,
+    };
+
     // For dev purposes only
     AWS.config.update({
       accessKeyId: this.config.aws.key,
@@ -38,13 +44,85 @@ class HistoryController/*  */ {
     this.s3 = new AWS.S3();
   }
 
+  async postVideo(req) {
+    try {
+      const { file, user } = req.body;
+
+      const key = await this.uploadVideo(file);
+
+      const type = 'video';
+
+      const history = {
+        key,
+        user,
+        type,
+      };
+
+      const [id] = await historyService.post(history);
+
+      await this.postToApi(type, key, id);
+
+      return defaultResponse({ id, key });
+    } catch (e) {
+      return (errorResponse(e));
+    }
+  }
+
+
+  async postImage(req) {
+    console.log('posting image');
+    try {
+      const { file } = req.body;
+
+      const fileKey = await this.uploadImage(file);
+      console.log('uploaded');
+      const historyType = 'image';
+
+      const userId = '1';
+
+      const history = {
+        key: fileKey,
+        user: userId,
+        type: historyType,
+      };
+
+      console.log('registering');
+      const [id] = await historyService.post(history);
+
+      console.log('posting to api');
+      await this.postToApi(historyType, fileKey, id);
+
+      return defaultResponse({ id, fileKey });
+    } catch (e) {
+      return (errorResponse(e));
+    }
+  }
+
+  postToApi(type, key, history) {
+    console.log('posting image to processing api');
+    return new Promise((resolve, reject) => {
+      request.post(
+        `${this.processingApi[type]}/${type}`,
+        {
+          json: { key, history },
+        },
+        (errRequest, response) => {
+          if (!errRequest && response.statusCode === 200) {
+            resolve();
+          }
+          reject(errRequest);
+        },
+      );
+    });
+  }
+
   /**
    * Upload video.
    */
-  uploadVideo(req) {
+  uploadVideo(file) {
     return new Promise((resolve, reject) => {
       console.log('uploading');
-      const base64data = Buffer.from(req.body.file, 'base64');
+      const base64data = Buffer.from(file, 'base64');
       const s3 = new AWS.S3();
       const { bucket } = this.config.aws;
       const token = uuid();
@@ -65,9 +143,9 @@ class HistoryController/*  */ {
           { json: { key: token } },
           (errRequest, response) => {
             if (!errRequest && response.statusCode === 200) {
-              resolve(defaultResponse(fileName));
+              resolve(fileName);
             } else {
-              reject(errorResponse(errRequest));
+              reject(errRequest);
             }
           },
         );
@@ -103,17 +181,19 @@ class HistoryController/*  */ {
     }
   }
 
+
   /**
    * Upload image.
    */
-  uploadImage(req) {
+  uploadImage(file) {
     return new Promise((resolve, reject) => {
       console.log('uploading image');
-      const base64data = Buffer.from(req.body.file, 'base64');
+      const base64data = Buffer.from(file, 'base64');
       const s3 = new AWS.S3();
       const { bucket } = this.config.aws;
       const token = uuid();
       const fileName = `${token}.jpg`;
+      console.log('image params done');
 
       s3.putObject({
         Bucket: bucket,
@@ -128,7 +208,7 @@ class HistoryController/*  */ {
           { json: { key: fileName } },
           (errRequest, response) => {
             if (!errRequest && response.statusCode === 200) {
-              console.log('post to process');
+              console.log('upload finished');
               resolve(defaultResponse(fileName));
             } else {
               console.log(errRequest);
