@@ -39,20 +39,22 @@ class HistoryService {
     return HistoryModel.post(data);
   }
 
-  static put(storyId, data) {
-    return knex.transaction(async (trx) => {
-      const history = await HistoryModel.get(storyId)
-        .transacting(trx);
+  static put(historyKey, data) {
+    return HistoryModel.get(historyKey)
+      .then(history => HistoryModel.put(history.id, data));
+    // return knex.transaction(async (trx) => {
+    //   const history = await HistoryModel.get(historyKey)
+    //     .transacting(trx);
 
-      if (history) {
-        await HistoryModel.put(history.id, data)
-          .transacting(trx);
+    //   if (history) {
+    //     await HistoryModel.put(history.id, data)
+    //       .transacting(trx);
 
-        return true;
-      }
+    //     return true;
+    //   }
 
-      return false;
-    });
+    //   return false;
+    // });
   }
 
   static delete(storyId, data) {

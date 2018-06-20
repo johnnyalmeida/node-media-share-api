@@ -2,6 +2,7 @@ import HttpStatus from 'http-status';
 import AWS from 'aws-sdk';
 import uuid from 'uuid';
 import request from 'request';
+import moment from 'moment';
 import historyService from '../services/HistoryServices';
 
 /**
@@ -60,6 +61,8 @@ class HistoryController/*  */ {
 
       const [id] = await historyService.post(history);
 
+      console.log(id);
+
       await this.postToApi(type, key, id);
 
       return defaultResponse({ id, key });
@@ -74,26 +77,53 @@ class HistoryController/*  */ {
     try {
       const { file } = req.body;
 
-      const fileKey = await this.uploadImage(file);
+      const key = await this.uploadImage(file);
       console.log('uploaded');
-      const historyType = 'image';
+      const type = 'image';
 
       const userId = '1';
+      const now = moment().format('YYYY-MM-DD H:mm:ss');
 
       const history = {
-        key: fileKey,
-        user: userId,
-        type: historyType,
+        key,
+        user_id: userId,
+        type,
+        status: 'processing',
+        createdAt: now,
+        updatedAt: now,
       };
 
       console.log('registering');
+
+      console.log(history);
+
       const [id] = await historyService.post(history);
 
-      console.log('posting to api');
-      await this.postToApi(historyType, fileKey, id);
+      console.log(`id: ${id}`);
+      console.log('posting');
+      await this.postToApi(type, key, id);
 
-      return defaultResponse({ id, fileKey });
+      return defaultResponse({ id, key });
     } catch (e) {
+      console.log(e);
+      return (errorResponse(e));
+    }
+  }
+
+  async postBack(req) {
+    let configs = this.config;
+    const data = {
+      key: req.body.key.trim(),
+      status: req.body.status,
+    };
+    console.log('receiving post back', data);
+    try {
+      const [id] = await historyService.put(data);
+      console.log('updated');
+      return (defaultResponse(id));
+    } catch (e) {
+      console.log('error updating');
+      console.log(e);
       return (errorResponse(e));
     }
   }
@@ -209,10 +239,10 @@ class HistoryController/*  */ {
           (errRequest, response) => {
             if (!errRequest && response.statusCode === 200) {
               console.log('upload finished');
-              resolve(defaultResponse(fileName));
+              resolve(fileName);
             } else {
               console.log(errRequest);
-              reject(errorResponse(errRequest));
+              reject(errRequest);
             }
           },
         );

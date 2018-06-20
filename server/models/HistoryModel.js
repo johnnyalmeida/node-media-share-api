@@ -10,31 +10,30 @@ class historyModel {
       .whereNot('history.status', historyType.DELETED);
   }
 
-  static get(historyId) {
+  static get(historyKey) {
     return knex
-      .first('id, name, status')
+      .first('id')
       .from('history')
-      .where('history.id', historyId)
-      .whereNot('history.status', historyType.DELETED);
+      .where('history.key', historyKey);
+    // .whereNot('history.status', historyType.DELETED);
   }
 
   static post(data) {
-    return knex('history')
-      .insert(data)
-      .returning('id')
-      .toString();
+    return knex
+      .from('history')
+      .insert(data);
   }
 
   static put(historyId, data) {
     const query = knex
       .from('history');
 
-    if (data.name) {
-      query.update('name', data.name);
+    if (data.status) {
+      query.update('status', data.status);
     }
 
-    query.where('history.id', historyId)
-      .whereNot('history.status', historyType.DELETED);
+    query.where('history.id', historyId);
+    // .whereNot('history.status', historyType.DELETED);
 
     return query;
   }
