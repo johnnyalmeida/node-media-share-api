@@ -15,20 +15,41 @@ Simple API developed for testing purposes
 
 ### `GET /`
 
-Returns a html page that loads a sample video in the stream.
+Returns the API status
 
 ### `GET /feed/`
 
 Return the main feed
 
-Return array of objects
+Return a list of arrays of objects
 ```
 [
-  {
-    'file key' // String
-    'file type' // String { 'image' | 'video' }
-  }
+  [
+    {
+      'file key' // String
+      'file type' // String { 'image' | 'video' }
+    }
+  ]
 ]
+```
+
+### `POST /history`
+
+Upload and process a file
+
+Body
+```
+  {
+    file: STRING, the file base64 string,
+    type: STRING, { 'image' | 'video' } the file type
+  }
+```
+
+Return
+```
+ {
+   key: STRING, processed file key
+ }
 ```
 
 ### `GET /video/`
@@ -55,26 +76,6 @@ Param
 Return 
 ```
   Video stream
-```
-
-
-### `POST /video`
-
-Upload and process a video file
-
-Body
-```
-  {
-    file: "Video File"
-  }
-```
-
-Return
-```
- {
-   path: STRING, processed file path
-   s3: STRING, AWS S3 response text
- }
 ```
 
 
@@ -116,23 +117,4 @@ Param
 Return 
 ```
   Image
-```
-
-### `POST /image`
-
-Upload and process an image file
-
-Body
-```
-  {
-    file: "Image File"
-  }
-```
-
-Return
-```
- {
-   path: STRING, processed file path
-   s3: STRING, AWS S3 response text
- }
 ```
