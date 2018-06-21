@@ -27,7 +27,7 @@ const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultR
 /**
  * Manage movies endpoints
  */
-class HistoryController/*  */ {
+class HistoryController {
   constructor(config) {
     this.history = historyService;
     this.config = config;
@@ -47,27 +47,38 @@ class HistoryController/*  */ {
   }
 
   async postVideo(req) {
+    console.log('posting video');
     try {
-      const { file, user } = req.body;
+      const { file } = req.body;
 
       const key = await this.uploadVideo(file);
-
+      console.log('uploaded');
       const type = 'video';
+
+      const userId = '1';
+      const now = moment().format('YYYY-MM-DD H:mm:ss');
 
       const history = {
         key,
-        user,
+        user_id: userId,
         type,
+        status: 'processing',
+        createdAt: now,
+        updatedAt: now,
       };
+
+      console.log('registering');
+
+      console.log(history);
 
       const [id] = await historyService.post(history);
 
-      console.log(id);
-
-      await this.postToApi(type, key, id);
+      console.log(`id: ${id}`);
+      await this.postToApi(type, key);
 
       return defaultResponse({ id, key });
     } catch (e) {
+      console.log(e);
       return (errorResponse(e));
     }
   }
@@ -126,13 +137,13 @@ class HistoryController/*  */ {
     }
   }
 
-  postToApi(type, key, history) {
+  postToApi(type, key) {
     console.log('posting image to processing api');
     return new Promise((resolve, reject) => {
       request.post(
         `${this.processingApi[type]}/${type}`,
         {
-          json: { key, history },
+          json: { key },
         },
         (errRequest, response) => {
           if (!errRequest && response.statusCode === 200) {
@@ -166,17 +177,7 @@ class HistoryController/*  */ {
           reject(errorS3);
         }
         console.log('uploaded');
-        request.post(
-          `${this.config.video_processing_api_url}/video`,
-          { json: { key: token } },
-          (errRequest, response) => {
-            if (!errRequest && response.statusCode === 200) {
-              resolve(fileName);
-            } else {
-              reject(errRequest);
-            }
-          },
-        );
+        resolve(token);
       });
     });
   }

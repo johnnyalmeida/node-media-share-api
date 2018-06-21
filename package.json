@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "babel-node": "babel-node",
-    "build": "babel -d build/ server/",
+    "build": "babel -d build/ src/",
     "start": "node ./build/index.js",
-    "start:dev": "nodemon --exec babel-node ./server/index.js",
-    "lint": "eslint 'server/**/*js'",
-    "lint:fix": "eslint 'server/**/*js' --fix",
+    "dev": "nodemon --exec babel-node ./src/index.js",
+    "lint": "eslint 'src/**/*js'",
+    "lint:fix": "eslint 'src/**/*js' --fix",
     "test-integration": "NODE_TEST_ENV=true mocha --opts test/integration/mocha.opts test/integration/**/*.js",
     "test": "npm run lint && npm run test-integration"
   },
