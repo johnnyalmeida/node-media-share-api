@@ -6,16 +6,17 @@ const { knex } = db;
 class historyModel {
   static list() {
     return knex
+      .select('key', 'type')
       .from('history')
-      .whereNot('history.status', historyType.DELETED);
+      .where('history.status', historyType.SUCCESS);
   }
 
   static get(historyKey) {
     return knex
       .first('id')
       .from('history')
-      .where('history.key', historyKey);
-    // .whereNot('history.status', historyType.DELETED);
+      .where('history.key', historyKey)
+      .whereNot('history.status', historyType.DELETED);
   }
 
   static post(data) {

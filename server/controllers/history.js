@@ -29,6 +29,7 @@ const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultR
  */
 class HistoryController/*  */ {
   constructor(config) {
+    this.history = historyService;
     this.config = config;
 
     this.processingApi = {
@@ -100,7 +101,6 @@ class HistoryController/*  */ {
       const [id] = await historyService.post(history);
 
       console.log(`id: ${id}`);
-      console.log('posting');
       await this.postToApi(type, key, id);
 
       return defaultResponse({ id, key });
@@ -111,20 +111,18 @@ class HistoryController/*  */ {
   }
 
   async postBack(req) {
-    let configs = this.config;
     const data = {
       key: req.body.key.trim(),
       status: req.body.status,
     };
-    console.log('receiving post back', data);
     try {
-      const [id] = await historyService.put(data);
-      console.log('updated');
-      return (defaultResponse(id));
+      const status = await this.history.put(data.key, data);
+      if (status) {
+        return defaultResponse('success');
+      }
+      return errorResponse('Update failed');
     } catch (e) {
-      console.log('error updating');
-      console.log(e);
-      return (errorResponse(e));
+      return errorResponse(e);
     }
   }
 
@@ -233,19 +231,7 @@ class HistoryController/*  */ {
         if (errorS3) {
           reject(errorS3);
         }
-        request.post(
-          `${this.config.image_processing_api_url}/image`,
-          { json: { key: fileName } },
-          (errRequest, response) => {
-            if (!errRequest && response.statusCode === 200) {
-              console.log('upload finished');
-              resolve(fileName);
-            } else {
-              console.log(errRequest);
-              reject(errRequest);
-            }
-          },
-        );
+        resolve(token);
       });
     });
   }

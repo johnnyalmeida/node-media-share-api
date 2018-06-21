@@ -1,19 +1,12 @@
-import knex from '../config/db';
+import db from '../config/db';
 import HistoryModel from '../models/HistoryModel';
-import toUnixEpoch from '../helpers/Datetime';
+import DateTime from '../helpers/Datetime';
+
+const { knex } = db;
 
 class HistoryService {
   static async list() {
     const list = await HistoryModel.list();
-
-    list.map(history => ({
-      id: history.id,
-      name: history.name,
-      status: history.status,
-      createdAt: toUnixEpoch(history.createdAt),
-      updatedAt: toUnixEpoch(history.updatedAt),
-      deletedAt: history.deletedAt ? toUnixEpoch(history.deletedAt) : null,
-    }));
 
     return list;
   }
@@ -26,9 +19,9 @@ class HistoryService {
         id: history.id,
         name: history.name,
         status: history.status,
-        createdAt: toUnixEpoch(history.createdAt),
-        updatedAt: toUnixEpoch(history.updatedAt),
-        deletedAt: history.deletedAt ? toUnixEpoch(history.deletedAt) : null,
+        createdAt: DateTime.toUnixEpoch(history.createdAt),
+        updatedAt: DateTime.toUnixEpoch(history.updatedAt),
+        deletedAt: history.deletedAt ? DateTime.toUnixEpoch(history.deletedAt) : null,
       };
     }
 
@@ -40,21 +33,17 @@ class HistoryService {
   }
 
   static put(historyKey, data) {
-    return HistoryModel.get(historyKey)
-      .then(history => HistoryModel.put(history.id, data));
-    // return knex.transaction(async (trx) => {
-    //   const history = await HistoryModel.get(historyKey)
-    //     .transacting(trx);
+    return knex.transaction(async (trx) => {
+      const history = await HistoryModel.get(historyKey)
+        .transacting(trx);
 
-    //   if (history) {
-    //     await HistoryModel.put(history.id, data)
-    //       .transacting(trx);
-
-    //     return true;
-    //   }
-
-    //   return false;
-    // });
+      if (history) {
+        await HistoryModel.put(history.id, data)
+          .transacting(trx);
+        return true;
+      }
+      return false;
+    });
   }
 
   static delete(storyId, data) {

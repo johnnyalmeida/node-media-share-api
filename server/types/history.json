@@ -1,4 +1,7 @@
 {
   "VALID": "VALID",
-  "DELETED": "DELETED"
+  "DELETED": "DELETED",
+  "SUCCESS": "success",
+  "ERROR": "error",
+  "PROCESSING": "processing"
 }

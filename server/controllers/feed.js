@@ -1,6 +1,7 @@
 import HttpStatus from 'http-status';
 import AWS from 'aws-sdk';
 import shuffle from 'shuffle-array';
+import historyService from '../services/HistoryServices';
 
 /**
  * Default success response callback
@@ -26,6 +27,7 @@ const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultR
  */
 class ImageController {
   constructor(config) {
+    this.history = historyService;
     this.config = config;
     // For dev purposes only
     AWS.config.update({
@@ -43,47 +45,19 @@ class ImageController {
     try {
       console.log('loading feed');
       const feed = [];
-      const images = await this.getImages();
-      const videos = await this.getVideos();
+      const list = await this.history.list();
 
-      const mixed = images.concat(videos);
-      while (Object.keys(mixed).length > 3) {
-        const aux = mixed.splice(0, 3);
+      while (Object.keys(list).length > 3) {
+        const aux = list.splice(0, 3);
         feed.push(aux);
       }
-      feed.push(mixed);
+      feed.push(list);
 
       console.log('feed loaded');
       return shuffle(feed);
     } catch (e) {
       return errorResponse(e);
     }
-  }
-
-  /**
-   * Get list of image thumbs.
-   */
-  getImages() {
-    return new Promise((resolve, reject) => {
-      const params = {
-        Bucket: this.config.aws.bucket,
-        Prefix: 'images/thumbs',
-      };
-      this.s3.listObjects(params, (err, objects) => {
-        if (err) {
-          reject(err);
-        } else {
-          const result = objects.Contents.map((value) => {
-            const text = value.Key.replace('.jpg', '');
-            return {
-              key: text.replace('images/thumbs/', ''),
-              type: 'image',
-            };
-          });
-          resolve(result);
-        }
-      });
-    });
   }
 
   /**
