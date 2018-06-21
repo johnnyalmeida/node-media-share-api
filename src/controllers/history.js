@@ -46,14 +46,13 @@ class HistoryController {
     this.s3 = new AWS.S3();
   }
 
-  async postVideo(req) {
-    console.log('posting video');
+  async post(req) {
     try {
-      const { file } = req.body;
+      const { file, type } = req.body;
+      console.log(`posting ${type}`);
 
-      const key = await this.uploadVideo(file);
+      const key = await this.upload(file, type);
       console.log('uploaded');
-      const type = 'video';
 
       const userId = '1';
       const now = moment().format('YYYY-MM-DD H:mm:ss');
@@ -83,44 +82,6 @@ class HistoryController {
     }
   }
 
-
-  async postImage(req) {
-    console.log('posting image');
-    try {
-      const { file } = req.body;
-
-      const key = await this.uploadImage(file);
-      console.log('uploaded');
-      const type = 'image';
-
-      const userId = '1';
-      const now = moment().format('YYYY-MM-DD H:mm:ss');
-
-      const history = {
-        key,
-        user_id: userId,
-        type,
-        status: 'processing',
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      console.log('registering');
-
-      console.log(history);
-
-      const [id] = await historyService.post(history);
-
-      console.log(`id: ${id}`);
-      await this.postToApi(type, key, id);
-
-      return defaultResponse({ id, key });
-    } catch (e) {
-      console.log(e);
-      return (errorResponse(e));
-    }
-  }
-
   async postBack(req) {
     const data = {
       key: req.body.key.trim(),
@@ -138,7 +99,7 @@ class HistoryController {
   }
 
   postToApi(type, key) {
-    console.log('posting image to processing api');
+    console.log(`posting ${type} to processing api`);
     return new Promise((resolve, reject) => {
       request.post(
         `${this.processingApi[type]}/${type}`,
@@ -152,6 +113,36 @@ class HistoryController {
           reject(errRequest);
         },
       );
+    });
+  }
+
+
+  /**
+   * Upload file.
+   */
+  upload(file, type) {
+    return new Promise((resolve, reject) => {
+      console.log(`uploading ${type}`);
+      const extension = type === 'video' ? 'mp4' : 'jpg';
+      const prefix = type === 'video' ? 'videos' : 'images';
+      const base64data = Buffer.from(file, 'base64');
+      const s3 = new AWS.S3();
+      const { bucket } = this.config.aws;
+      const token = uuid();
+      const fileName = `${token}.${extension}`;
+      const key = `${prefix}/${fileName}`;
+      console.log(`key to upload: ${key}`);
+      s3.putObject({
+        Bucket: bucket,
+        Key: key,
+        Body: base64data,
+      }, (errorS3) => {
+        if (errorS3) {
+          reject(errorS3);
+        }
+        console.log('uploaded');
+        resolve(token);
+      });
     });
   }
 
