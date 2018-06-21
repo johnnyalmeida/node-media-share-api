@@ -14,6 +14,12 @@ export default (app) => {
       videoController.getThumb(req, res);
     });
 
+
+  app.route('/video/cover/:key')
+    .get((req, res) => {
+      videoController.getCover(req, res);
+    });
+
   app.route('/video/stream/:key')
     .get((req, res) => {
       const { key } = req.params;

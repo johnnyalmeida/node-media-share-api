@@ -125,6 +125,35 @@ class VideoController/*  */ {
       errorResponse(e, HttpStatus.BAD_REQUEST);
     }
   }
+
+ 
+  /**
+   * Get image
+   */
+  getCover(req, res) {
+    const { key } = req.params;
+
+    console.log(key);
+
+    const params = {
+      Bucket: this.config.aws.bucket,
+      Key: `videos/covers/${key}`,
+    };
+
+    try {
+      this.s3.getObject(params)
+        .createReadStream()
+        .pipe(res)
+        .on('error', (err) => {
+          errorResponse(err, HttpStatus.BAD_REQUEST);
+        })
+        .on('finish', () => {
+          console.log('finished serving cover');
+        });
+    } catch (e) {
+      errorResponse(e, HttpStatus.BAD_REQUEST);
+    }
+  }
 }
 
 export default VideoController;
