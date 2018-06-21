@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "babel-node": "babel-node",
-    "build": "babel -d build/ src/",
+    "build": "babel -d build/ src/ --copy-files",
     "start": "node ./build/index.js",
     "dev": "nodemon --exec babel-node ./src/index.js",
     "lint": "eslint 'src/**/*js'",
