@@ -7,6 +7,8 @@ import feedRouter from './routes/feed';
 import historyRouter from './routes/history';
 import knex from './config/db';
 
+import newrelic from 'newrelic';
+
 const app = express();
 
 app.config = config;
