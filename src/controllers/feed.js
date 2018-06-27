@@ -1,6 +1,7 @@
 import HttpStatus from 'http-status';
 import AWS from 'aws-sdk';
 import shuffle from 'shuffle-array';
+import redis from 'redis';
 import historyService from '../services/HistoryServices';
 
 /**
@@ -25,8 +26,9 @@ const errorResponse = (message, statusCode = HttpStatus.BAD_REQUEST) => defaultR
 /**
  * Manage movies endpoints
  */
-class ImageController {
+class FeedController {
   constructor(config) {
+    this.cache = redis.createClient();
     this.history = historyService;
     this.config = config;
     // For dev purposes only
@@ -43,21 +45,61 @@ class ImageController {
    */
   async get() {
     try {
-      console.log('loading feed');
-      const feed = [];
-      const list = await this.history.list();
+      const token = 'user3';
+      let feed = await this.getFeedCache(token);
 
-      while (Object.keys(list).length > 3) {
-        const aux = list.splice(0, 3);
-        feed.push(aux);
+      if (!feed) {
+        feed = await this.setFeed(token);
       }
-      feed.push(list);
 
-      console.log('feed loaded');
-      return shuffle(feed);
+      return feed;
     } catch (e) {
       return errorResponse(e);
     }
+  }
+
+  getFeedCache(token) {
+    return new Promise((resolve, reject) => {
+      const key = `feed:${token}`;
+      this.cache.get(key, (err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        console.log('cached: ', data);
+        return resolve(JSON.parse(data));
+      });
+    });
+  }
+
+  setFeed(token) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        console.log('loading feed');
+        let feed = [];
+        const list = await this.history.list();
+
+        while (Object.keys(list).length > 3) {
+          const aux = list.splice(0, 3);
+          feed.push(aux);
+        }
+        feed.push(list);
+
+        feed = shuffle(feed);
+
+        const key = `feed:${token}`;
+
+        this.cache.set(key, JSON.stringify(feed), (err, data) => {
+          console.log('feed', feed);
+          console.log('feed', data);
+          console.log('finished memcached');
+        });
+
+        console.log('feed loaded');
+        return resolve(feed);
+      } catch (e) {
+        return reject(e);
+      }
+    });
   }
 
   /**
@@ -87,4 +129,4 @@ class ImageController {
   }
 }
 
-export default ImageController;
+export default FeedController;

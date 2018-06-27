@@ -1,7 +1,7 @@
 import supertest from 'supertest';
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import app from '../../server/app';
+import app from '../../src/app';
 
 chai.use(chaiHttp);
 
