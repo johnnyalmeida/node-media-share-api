@@ -49,10 +49,7 @@ class HistoryController {
   async post(req) {
     try {
       const { file, type } = req.body;
-      console.log(`posting ${type}`);
-
       const key = await this.upload(file, type);
-      console.log('uploaded');
 
       const userId = '1';
       const now = moment().format('YYYY-MM-DD H:mm:ss');
@@ -66,18 +63,12 @@ class HistoryController {
         updatedAt: now,
       };
 
-      console.log('registering');
-
-      console.log(history);
-
       const [id] = await historyService.post(history);
 
-      console.log(`id: ${id}`);
       await this.postToApi(type, key);
 
       return defaultResponse({ id, key });
     } catch (e) {
-      console.log(e);
       return (errorResponse(e));
     }
   }

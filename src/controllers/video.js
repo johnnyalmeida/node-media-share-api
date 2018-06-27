@@ -126,7 +126,6 @@ class VideoController/*  */ {
     }
   }
 
- 
   /**
    * Get image
    */

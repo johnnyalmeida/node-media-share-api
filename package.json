@@ -10,10 +10,12 @@
     "dev": "nodemon --exec babel-node ./src/index.js",
     "lint": "eslint 'src/**/*js'",
     "lint:fix": "eslint 'src/**/*js' --fix",
-    "test-integration": "NODE_TEST_ENV=true mocha --opts test/integration/mocha.opts test/integration/**/*.js",
+    "test-integration": "NODE_TEST_ENV=true mocha --exit --timeout 15000 --opts test/integration/mocha.opts test/integration/**/*.js",
+    "test-ava": "nyc ava",
     "test": "npm run lint && npm run test-integration"
   },
   "dependencies": {
+    "ava": "^0.25.0",
     "aws-sdk": "^2.252.1",
     "babel": "^6.23.0",
     "babel-cli": "^6.26.0",
@@ -32,9 +34,11 @@
     "momentjs": "^2.0.0",
     "mysql2": "^1.5.3",
     "newrelic": "^4.2.0",
+    "nyc": "^12.0.2",
     "redis": "^2.8.0",
     "request": "^2.87.0",
     "shuffle-array": "^1.0.1",
+    "supertest": "^3.0.0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {
@@ -48,9 +52,17 @@
     "joi-assert": "0.0.3",
     "mocha": "^5.2.0",
     "streamtest": "^1.2.3",
-    "supertest": "^3.0.0",
     "testdouble": "^3.8.0"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "ava": {
+    "files": [
+      "test/**/*.js"
+    ],
+    "require": [
+      "babel-register"
+    ],
+    "babel": "inherit"
+  }
 }
