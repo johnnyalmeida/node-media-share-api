@@ -5,7 +5,7 @@ import VideoController from '../controllers/video';
 export default (app) => {
   const videoController = new VideoController(app.config);
 
-  app.get('/', (req, res) => {
+  app.get('/test', (req, res) => {
     fs.readFile('./_files/index.html', (err, html) => res.end(html));
   });
 
